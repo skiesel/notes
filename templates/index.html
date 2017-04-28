@@ -1,0 +1,154 @@
+<html ng-app="Notes">
+	<head>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-animate.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular-sanitize.js"></script>
+    <script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-2.5.0.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+		<title>Notes</title>
+
+    <script>
+      var app = angular.module("Notes", ['ngAnimate', 'ngSanitize', 'ui.bootstrap'], function($interpolateProvider) {
+    		$interpolateProvider.startSymbol('[[');
+    		$interpolateProvider.endSymbol(']]');
+			});
+    </script>
+
+	</head>
+	<body ng-controller="NotesController" ng-cloak>
+		<script type="text/ng-template" id="group-template.html">
+			<div class="panel-heading">
+				<h4 class="panel-title" style="color:#fa39c3">
+					<a href tabindex="0" class="accordion-toggle" ng-click="toggleOpen()" uib-accordion-transclude="heading">
+						<span uib-accordion-header ng-class="{'text-muted': isDisabled}">
+							[[heading]]
+						</span>
+					</a>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse" uib-collapse="!isOpen">
+				<div class="panel-body" style="text-align: right" ng-transclude></div>
+			</div>
+		</script>
+
+		<div class="alert alert-success" style="margin-bottom:0px;" ng-show="showAlertSuccess">
+			<strong>Success!</strong>
+		</div>
+		<div class="alert alert-failure" style="margin-bottom:0px;" ng-show="showAlertFailure">
+					<strong>Failed</strong> to save.
+		</div>
+
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="input-group" style="width:100%">
+					<input type="text" class="form-control" placeholder="filter" ng-model="searchText">
+					<span class="input-group-btn">
+						<button class="btn btn-default" type="button" ng-click="addNew()">Add New</button>
+						<button class="btn dropdown-toggle btn-default" type="button" data-toggle="dropdown">Order By
+						<span class="caret"></span></button>
+						<ul class="dropdown-menu">
+							<li><a href="#" ng-click="ordering='Title'">Title</a></li>
+							<li><a href="#" ng-click="ordering='Date'">Date</a></li>
+							<li><a href="#" ng-click="ordering=''">None</a></li>
+						</ul>
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<uib-accordion close-others="true">
+			<div ng-repeat="$note in notes | filter:searchText | orderBy:ordering" uib-accordion-group class="panel-default">
+				<uib-accordion-heading ng-init="edit=false; backupTitle=$note.Title; backupBody=$note.Body">
+					<div class="row">
+						<div class="col-xs-11">
+							<span ng-show="!edit">
+								[[ $note.Title ]] ([[ friendlyFormat($note.Date) ]])
+							</span>
+							<span ng-show="edit">
+								<input type="text" class="form-control" placeholder="filter" ng-model="$note.Title" style="width:75%">
+							</span>
+						</div>
+						<div class="col-xs-1">
+							<span class="glyphicon glyphicon-trash pull-right" ng-click="removeThis($note)" aria-hidden="true"></span>
+						</div>
+					</div>
+				</uib-accordion-heading>
+
+				<div ng-show="!edit">
+					<div class="row">
+						<div class="col-xs-12">
+							<div class="glyphicon glyphicon-edit" ng-click="edit=!edit" aria-hidden="true"></div>
+						</div>
+					</div>
+					<div class="row" style="margin-top:10px">
+						<div class="col-xs-12">
+							<pre>[[ $note.Body ]]</pre>
+						</div>
+					</div>
+				</div>
+
+				<div ng-show="edit">
+					<div class="row">
+						<div class="col-xs-12">
+							<span class="glyphicon glyphicon-floppy-disk" ng-click="save(); edit=!edit" aria-hidden="true"></span>&nbsp;&nbsp;&nbsp;
+							<span class="glyphicon glyphicon-remove" ng-click="$note.Title=backupTitle; $note.Body=backupBody; edit=!edit" aria-hidden="true"></span>
+						</div>
+					</div>
+					<div class="row" style="margin-top:10px">
+						<div class="col-xs-12">
+							<textarea ng-model="$note.Body" class="form-control" rows="10"></textarea>
+						</div>
+					</div>
+				</div>
+
+    	</div>
+		</uib-accordian>
+
+		<script>
+			app.controller("NotesController", function($scope, $http, $timeout){
+				$scope.status = {}
+				$scope.showAlertSuccess = false;
+				$scope.showAlertFailure = false;
+				$scope.notes = JSON.parse({{ .ToJSON }});
+
+				$scope.addNew = function() {
+					$scope.notes.unshift({
+						Title : "New Title",
+						Body : "New Body",
+						Date : moment().format(),
+					});
+					$scope.save();
+				};
+
+				$scope.removeThis = function(note) {
+					$scope.notes.splice($scope.notes.indexOf(note), 1);
+					$scope.save();
+				};
+
+				var timer = null;
+				$scope.save = function() {
+					$http.post("/save", $scope.notes)
+    			.then(function(response) {
+						if(response.data === "success") {
+							$scope.showAlertSuccess = true;
+						} else {
+							$scope.showAlertFailure = true;
+						}
+						$timeout.cancel(timer);
+						timer = $timeout(function() { $scope.showAlertSuccess = $scope.showAlertFailure = false; }, 5000);
+    			});
+				}
+
+				$scope.friendlyFormat = function(dateString) {
+					var date = moment(dateString);
+					return date.format("YYYY-MM-DD hh:mm:ss");
+				}
+			});
+		</script>
+	</body>
+</html>
