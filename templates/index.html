@@ -52,9 +52,9 @@
 						<button class="btn dropdown-toggle btn-default" type="button" data-toggle="dropdown">Order By
 						<span class="caret"></span></button>
 						<ul class="dropdown-menu">
-							<li><a href="#" ng-click="ordering='Title'">Title</a></li>
-							<li><a href="#" ng-click="ordering='Date'">Date</a></li>
-							<li><a href="#" ng-click="ordering=''">None</a></li>
+							<li><a href="#" ng-click="ordering='Title';reverseOrdering=false;">Title</a></li>
+							<li><a href="#" ng-click="ordering='Date';reverseOrdering=true;">Date</a></li>
+							<li><a href="#" ng-click="ordering='';reverseOrdering=false;">None</a></li>
 						</ul>
 					</span>
 				</div>
@@ -62,7 +62,7 @@
 		</div>
 
 		<uib-accordion close-others="true">
-			<div ng-repeat="$note in notes | filter:searchText | orderBy:ordering" uib-accordion-group class="panel-default">
+			<div ng-repeat="$note in notes | filter:searchText | orderBy:ordering:reverseOrdering" uib-accordion-group class="panel-default">
 				<uib-accordion-heading ng-init="edit=false; backupTitle=$note.Title; backupBody=$note.Body">
 					<div class="row">
 						<div class="col-xs-11">
