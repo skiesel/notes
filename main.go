@@ -65,8 +65,6 @@ func readDatastore(datastoreLocation string) NoteSlice {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	//remove this
-	indexTemplate, _ = template.New("index.html").ParseFiles("templates/index.html")
 	indexTemplate.Execute(w, notes)
 }
 
