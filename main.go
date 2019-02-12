@@ -45,7 +45,7 @@ func main() {
 
 	http.HandleFunc("/save", save)
 	http.HandleFunc("/", index)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":2222", nil)
 }
 
 func readDatastore(datastoreLocation string) NoteSlice {
